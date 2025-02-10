@@ -19,7 +19,7 @@ class McpClient:
         self.id = config.name
 
     async def connect(self):
-        print(f"Connecting to MCP server... {self.config.command} {self.config.name}")
+        logger.info(f"Connecting to MCP server... {self.config.command} {self.config.name}")
         args = [self.config.name, *self.config.args]
         params = StdioServerParameters(
             command=self.config.command,

@@ -13,7 +13,7 @@ def serve() -> None:
     server = Server("mcp-proxy")
     sse = SseServerTransport("/messages/")
 
-    proxy = McpProxy("mcp-servers.yaml")
+    proxy = McpProxy()
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
