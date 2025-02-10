@@ -1,0 +1,21 @@
+[project]
+name = "mcp-proxy"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Yanbo", email = "yanbo.ai@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.2.1",
+    "pydantic>=2.10.6",
+    "pyyaml>=6.0.2",
+]
+
+[project.scripts]
+mcp-proxy = "mcp_proxy:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
