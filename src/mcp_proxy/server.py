@@ -2,11 +2,11 @@ import uvicorn
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource, Prompt, GetPromptResult, Resource, \
-    ReadResourceResult, TextResourceContents, BlobResourceContents, ReadResourceRequest, ServerResult
-from pydantic import AnyUrl
-from mcp_proxy.proxy import McpProxy
+    ReadResourceResult, ReadResourceRequest, ServerResult
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount
+
+from mcp_proxy.proxy import McpProxy
 
 
 def serve(config_path) -> None:
@@ -62,4 +62,4 @@ def serve(config_path) -> None:
 
     server.request_handlers[ReadResourceRequest] = read_resource
     starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[proxy.disconnect])
-    uvicorn.run(starlette_app, host="0.0.0.0", port=1598, timeout_graceful_shutdown=5, log_level='info')
+    uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info')

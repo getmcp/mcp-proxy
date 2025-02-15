@@ -10,5 +10,5 @@ def main():
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
     else:
-        config_path = os.environ.get("MCP_PROXY_CONFIG") or "mcp-servers.yaml"
+        config_path = os.environ.get("MCP_PROXY_CONFIG") or "mcp-servers.json"
     serve(config_path)

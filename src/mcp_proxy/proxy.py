@@ -1,8 +1,6 @@
 import asyncio
 import logging
-
-import yaml
-import os
+import json
 from pydantic import AnyUrl
 from mcp_proxy.client import McpClient
 from mcp_proxy.types import McpServerConfig
@@ -15,8 +13,8 @@ logger = logging.getLogger(__name__)
 class McpProxy:
     def __init__(self, config_path: str):
         logger.info(f"Loading config from {config_path}")
-        with open(config_path, 'r') as stream:
-            config = yaml.safe_load(stream)
+        with open(config_path, 'r', encoding='utf-8') as stream:
+            config = json.load(stream)
         server_configs = [McpServerConfig(**server) for server in config['servers']]
         self.clients = [McpClient(server_config) for server_config in server_configs]
         routes = {}
@@ -26,8 +24,11 @@ class McpProxy:
         self.resources = {}
 
     async def connect(self) -> None:
-        connects = [client.connect() for client in self.clients]
-        await asyncio.gather(*connects, return_exceptions=True)
+        tasks = []
+        for client in self.clients:
+            task = asyncio.create_task(client.connect())
+            tasks.append(task)
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     async def disconnect(self) -> None:
         disconnects = [client.cleanup() for client in self.clients]
