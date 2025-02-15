@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class McpProxy:
-    def __init__(self):
-        config_path = os.environ.get("MCP_PROXY_CONFIG") or "mcp-servers.yaml"
+    def __init__(self, config_path: str):
         logger.info(f"Loading config from {config_path}")
         with open(config_path, 'r') as stream:
             config = yaml.safe_load(stream)

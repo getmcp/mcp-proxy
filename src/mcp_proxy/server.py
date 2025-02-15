@@ -9,11 +9,11 @@ from starlette.applications import Starlette
 from starlette.routing import Route, Mount
 
 
-def serve() -> None:
+def serve(config_path) -> None:
     server = Server("mcp-proxy")
     sse = SseServerTransport("/messages/")
 
-    proxy = McpProxy()
+    proxy = McpProxy(config_path)
 
     @server.list_tools()
     async def list_tools() -> list[Tool]:
