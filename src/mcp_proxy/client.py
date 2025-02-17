@@ -1,6 +1,7 @@
 import logging
 from contextlib import AsyncExitStack
 from typing import Optional
+import os
 
 from mcp_proxy.types import McpServerConfig
 from mcp import ClientSession, StdioServerParameters
@@ -21,8 +22,9 @@ class McpClient:
     async def connect(self):
         logger.info(f"Connecting to MCP server... {self.config.command} {self.config.name}")
         args = [self.config.name, *self.config.args]
+        command = self.resolve_command_path(self.config.command)
         params = StdioServerParameters(
-            command=self.config.command,
+            command=command,
             args=args,
             env=None,
         )
@@ -57,3 +59,12 @@ class McpClient:
 
     async def cleanup(self):
         await self.exit_stack.aclose()
+
+    @staticmethod
+    def resolve_command_path(command: str) -> str:
+        name = f"{command.upper()}_PATH"
+        path = os.environ.get(name)
+        if path is not None and len(path) > 0:
+            logger.info(f"Using {command}={path}")
+            return path
+        return command
