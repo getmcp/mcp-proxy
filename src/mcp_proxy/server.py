@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import signal
+import sys
 
 import mcp.server.stdio
 import uvicorn
@@ -82,7 +84,13 @@ def serve(config_path: str, is_sse: bool) -> None:
         logger.info("Starting STDIO server")
 
         async def run():
+            await proxy.connect()
             async with mcp.server.stdio.stdio_server() as (read, write):
                 await server.run(read, write, server.create_initialization_options())
 
+        def stop(signum, frame):
+            # await proxy.disconnect()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, stop)
         asyncio.run(run())
