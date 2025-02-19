@@ -31,11 +31,22 @@ class McpClient:
         params = StdioServerParameters(
             command=command,
             args=args,
-            env=envs,
+            env=None,
         )
-        stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
-        self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
-        await self.session.initialize()
+        try:
+            import asyncio
+            async with asyncio.timeout(5): 
+                stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
+                self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
+                await self.session.initialize()
+        except asyncio.TimeoutError:
+            logger.error(f"Connection to {self.config.name} timed out after 5 seconds")
+            await self.exit_stack.aclose()
+            raise
+        except Exception as e:
+            logger.error(f"Failed to connect to MCP server: {str(e)}")
+            await self.exit_stack.aclose()
+            raise
 
     async def list_tools(self) -> ListToolsResult:
         result = await self.session.list_tools()

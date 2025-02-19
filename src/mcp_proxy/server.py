@@ -73,19 +73,23 @@ def serve(config_path: str, is_sse: bool) -> None:
             Mount("/messages/", app=transport.handle_post_message),
         ]
 
-        def stop(signum, frame):
-            # await proxy.disconnect()
-            sys.exit(0)
+        async def shutdown():
+            logger.info("Shutting down server...")
+            try:
+                await proxy.disconnect()
+                # Give connections time to close gracefully
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                logger.error(f"Error during shutdown: {e}")
 
-        signal.signal(signal.SIGINT, stop)
 
         server.request_handlers[ReadResourceRequest] = read_resource
         middleware = [
             Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])
         ]
-        starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[proxy.disconnect],
+        starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[shutdown],
                                   middleware=middleware)
-        uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info', timeout_graceful_shutdown=1)
+        uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info', timeout_graceful_shutdown=5)
     else:
         logger.info("Starting STDIO server")
 
