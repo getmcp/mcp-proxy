@@ -5,3 +5,4 @@ class McpServerConfig(BaseModel):
     command: str
     name: str
     args: list[str] = []
+    env: dict[str, str] = {}

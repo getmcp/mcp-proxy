@@ -26,7 +26,7 @@ class McpClient:
         params = StdioServerParameters(
             command=command,
             args=args,
-            env=None,
+            env=self.config.env,
         )
         stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
         self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
