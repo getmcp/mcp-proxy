@@ -35,7 +35,9 @@ class McpProxy:
         await asyncio.gather(*disconnects, return_exceptions=True)
 
     async def list_tools(self) -> list[Tool]:
-        tasks = [client.list_tools() for client in self.clients]
+        tasks = [client.list_tools() for client in self.clients if client.connected]
+        if not tasks:
+            return []
         responses = await asyncio.gather(*tasks)
         return sum([response.tools or [] for response in responses], start=[])
 
@@ -47,7 +49,9 @@ class McpProxy:
         return response.content
 
     async def list_prompts(self) -> list[Prompt]:
-        tasks = [client.list_prompts() for client in self.clients]
+        tasks = [client.list_prompts() for client in self.clients if client.connected]
+        if not tasks:
+            return []
         responses = await asyncio.gather(*tasks)
         return sum([response.prompts or [] for response in responses], start=[])
 
@@ -60,7 +64,9 @@ class McpProxy:
         return response
 
     async def list_resources(self) -> list[Resource]:
-        tasks = [client.list_resources() for client in self.clients]
+        tasks = [client.list_resources() for client in self.clients if client.connected]
+        if not tasks:
+            return []
         responses = await asyncio.gather(*tasks)
         all_resources = []
         for resources, client_name in responses:
