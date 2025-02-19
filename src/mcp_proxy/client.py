@@ -3,6 +3,8 @@ from contextlib import AsyncExitStack
 from typing import Optional
 import os
 
+import mcp.client.stdio
+
 from mcp_proxy.types import McpServerConfig
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
@@ -23,10 +25,13 @@ class McpClient:
         logger.info(f"Connecting to MCP server... {self.config.command} {self.config.name}")
         args = [self.config.name, *self.config.args]
         command = self.resolve_command_path(self.config.command)
+        envs = mcp.client.stdio.get_default_environment()
+        if self.config.env is not None:
+            envs.update(self.config.env)
         params = StdioServerParameters(
             command=command,
             args=args,
-            env=self.config.env,
+            env=envs,
         )
         stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
         self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
