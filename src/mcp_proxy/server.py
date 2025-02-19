@@ -58,7 +58,7 @@ def serve(config_path: str, is_sse: bool) -> None:
 
     if is_sse:
         logger.info("Starting SSE server")
-        transport = SseServerTransport("http://localhost:1598/sse")
+        transport = SseServerTransport("/messages/")
 
         async def handle_sse(request):
             async with transport.connect_sse(
