@@ -11,4 +11,5 @@ def main():
         config_path = sys.argv[1]
     else:
         config_path = os.environ.get("MCP_PROXY_CONFIG") or "mcp-servers.json"
-    serve(config_path)
+    is_sse = len(sys.argv) > 2 and sys.argv[2] == "sse"
+    serve(config_path, is_sse)

@@ -1,3 +1,7 @@
+import asyncio
+import logging
+
+import mcp.server.stdio
 import uvicorn
 from mcp.server import Server
 from mcp.server.sse import SseServerTransport
@@ -10,10 +14,11 @@ from starlette.routing import Route, Mount
 
 from mcp_proxy.proxy import McpProxy
 
+logger = logging.getLogger(__name__)
 
-def serve(config_path) -> None:
+
+def serve(config_path: str, is_sse: bool) -> None:
     server = Server("mcp-proxy")
-    sse = SseServerTransport("/messages/")
 
     proxy = McpProxy(config_path)
 
@@ -49,23 +54,35 @@ def serve(config_path) -> None:
             )
         )
 
-    async def handle_sse(request):
-        async with sse.connect_sse(
-                request.scope, request.receive, request._send
-        ) as streams:
-            await server.run(
-                streams[0], streams[1], server.create_initialization_options()
-            )
+    if is_sse:
+        logger.info("Starting SSE server")
+        transport = SseServerTransport("http://localhost:1598/sse")
 
-    routes = [
-        Route("/sse", endpoint=handle_sse),
-        Mount("/messages/", app=sse.handle_post_message),
-    ]
+        async def handle_sse(request):
+            async with transport.connect_sse(
+                    request.scope, request.receive, request._send
+            ) as streams:
+                await server.run(
+                    streams[0], streams[1], server.create_initialization_options()
+                )
 
-    server.request_handlers[ReadResourceRequest] = read_resource
-    middleware = [
-        Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])
-    ]
-    starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[proxy.disconnect],
-                              middleware=middleware)
-    uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info')
+        routes = [
+            Route("/sse", endpoint=handle_sse),
+            Mount("/messages/", app=transport.handle_post_message),
+        ]
+
+        server.request_handlers[ReadResourceRequest] = read_resource
+        middleware = [
+            Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])
+        ]
+        starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[proxy.disconnect],
+                                  middleware=middleware)
+        uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info')
+    else:
+        logger.info("Starting STDIO server")
+
+        async def run():
+            async with mcp.server.stdio.stdio_server() as (read, write):
+                await server.run(read, write, server.create_initialization_options())
+
+        asyncio.run(run())
