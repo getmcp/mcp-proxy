@@ -76,9 +76,9 @@ def serve(config_path: str, is_sse: bool) -> None:
         async def shutdown():
             logger.info("Shutting down server...")
             try:
-                await proxy.disconnect()
-                # Give connections time to close gracefully
-                await asyncio.sleep(0.5)
+                await asyncio.wait_for(proxy.disconnect(), timeout=1)
+            except asyncio.TimeoutError:
+                logger.error("Timeout during shutdown, forcing exit")
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
 
@@ -94,13 +94,14 @@ def serve(config_path: str, is_sse: bool) -> None:
         logger.info("Starting STDIO server")
 
         async def run():
-            await proxy.connect()
             async with mcp.server.stdio.stdio_server() as (read, write):
                 await server.run(read, write, server.create_initialization_options())
 
         def stop(signum, frame):
-            # await proxy.disconnect()
+            logger.info(f"Received signal {signum}, initiating shutdown")
+            asyncio.get_event_loop().create_task(proxy.disconnect())
             sys.exit(0)
 
         signal.signal(signal.SIGINT, stop)
+        signal.signal(signal.SIGTERM, stop)
         asyncio.run(run())

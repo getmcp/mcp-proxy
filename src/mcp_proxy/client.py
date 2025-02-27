@@ -34,15 +34,16 @@ class McpClient:
             args=args,
             env=envs,
         )
+        timeout = 1
         try:
             import asyncio
-            async with asyncio.timeout(5):
+            async with asyncio.timeout(timeout):
                 stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
                 self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
                 await self.session.initialize()
                 self.connected = True
         except asyncio.TimeoutError:
-            logger.error(f"Connection to {self.config.name} timed out after 5 seconds")
+            logger.error(f"Connection to {self.config.name} timed out after {timeout} seconds")
             await self.exit_stack.aclose()
             raise
         except Exception as e:
