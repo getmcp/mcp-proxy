@@ -8,7 +8,7 @@ import mcp.client.stdio
 from mcp_proxy.types import McpServerConfig
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.types import Tool, Resource, Prompt, ListToolsResult, ListPromptsResult, ListResourcesResult
+from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class McpClient:
             args=args,
             env=envs,
         )
-        timeout = 1
+        timeout = 30
         try:
             import asyncio
             async with asyncio.timeout(timeout):
