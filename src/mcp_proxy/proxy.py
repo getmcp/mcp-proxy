@@ -1,10 +1,13 @@
 import asyncio
-import logging
 import json
+import logging
+
+from mcp.types import Tool, Prompt, TextContent, ImageContent, EmbeddedResource, GetPromptResult, Resource, \
+    ReadResourceResult
 from pydantic import AnyUrl
+
 from mcp_proxy.client import McpClient
 from mcp_proxy.types import McpServerConfig
-from mcp.types import Tool, Prompt, TextContent, ImageContent, EmbeddedResource, GetPromptResult, Resource, ReadResourceResult
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +32,9 @@ class McpProxy:
             tasks.append(task)
         await asyncio.gather(*tasks, return_exceptions=True)
 
-    async def disconnect(self) -> None: 
+    async def disconnect(self) -> None:
         tasks = [client.cleanup() for client in self.clients]
         await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=1)
-          
 
     async def list_tools(self) -> list[Tool]:
         tasks = [client.list_tools() for client in self.clients if client.connected]

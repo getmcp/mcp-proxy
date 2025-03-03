@@ -82,7 +82,6 @@ def serve(config_path: str, is_sse: bool) -> None:
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
 
-
         server.request_handlers[ReadResourceRequest] = read_resource
         middleware = [
             Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])

@@ -1,14 +1,14 @@
 import logging
+import os
 from contextlib import AsyncExitStack
 from typing import Optional
-import os
 
 import mcp.client.stdio
-
-from mcp_proxy.types import McpServerConfig
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult
+from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult, Resource
+
+from mcp_proxy.types import McpServerConfig
 
 logger = logging.getLogger(__name__)
 

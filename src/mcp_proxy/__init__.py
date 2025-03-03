@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+
 from mcp_proxy.server import serve
 
 logging.basicConfig(level=logging.INFO)
