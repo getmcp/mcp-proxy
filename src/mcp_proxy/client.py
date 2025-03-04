@@ -21,7 +21,7 @@ class McpClient:
         self.exit_stack = AsyncExitStack()
         self.session: Optional[ClientSession] = None
         self.connected = False
-        self.id = uuid.uuid4().hex
+        self.id = config.id or uuid.uuid4().hex
 
     async def connect(self):
         logger.info(f"Connecting to MCP server... {self.config.command} {self.config.package}")
