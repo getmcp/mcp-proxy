@@ -2,19 +2,19 @@
   "servers": [
     {
       "command": "uvx",
-      "name": "mcp-server-fetch",
+      "package": "mcp-server-fetch",
       "args": []
     },
     {
       "command": "npx",
-      "name": "@modelcontextprotocol/server-filesystem",
+      "package": "@modelcontextprotocol/server-filesystem",
       "args": [
         "."
       ]
     },
     {
       "command": "uvx",
-      "name": "mcp-server-sqlite",
+      "package": "mcp-server-sqlite",
       "args": [
         "--db-path",
         "~/test.db"

@@ -1,6 +1,6 @@
 import logging
-import os
-import sys
+
+import argparse
 
 from mcp_proxy.server import serve
 
@@ -8,9 +8,15 @@ logging.basicConfig(level=logging.INFO)
 
 
 def main():
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-    else:
-        config_path = os.environ.get("MCP_PROXY_CONFIG") or "mcp-servers.json"
-    is_sse = len(sys.argv) > 2 and sys.argv[2] == "sse"
-    serve(config_path, is_sse)
+    parser = argparse.ArgumentParser(
+        description="Create mcp servers proxy."
+    )
+    parser.add_argument("-c", "--config", type=str, default="mcp-servers.json")
+    parser.add_argument("-t", "--type", type=str, default="stdio", choices=["stdio", "sse"])
+    args = parser.parse_args()
+    is_sse = args.type == "sse"
+    serve(args.config, is_sse)
+
+
+if __name__ == "__main__":
+    main()

@@ -25,6 +25,15 @@ wheels = [
 ]
 
 [[package]]
+name = "argparse"
+version = "1.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/18/dd/e617cfc3f6210ae183374cd9f6a26b20514bbb5a792af97949c5aacddf0f/argparse-1.4.0.tar.gz", hash = "sha256:62b089a55be1d8949cd2bc7e0df0bddb9e028faefc8c32038cc84862aefdd6e4", size = 70508 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/94/3af39d34be01a24a6e65433d19e107099374224905f1e0cc6bbe1fd22a2f/argparse-1.4.0-py2.py3-none-any.whl", hash = "sha256:c31647edb69fd3d465a847ea3157d37bed1f95f19760b11a47aa91c04b666314", size = 23000 },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.1.31"
 source = { registry = "https://pypi.org/simple" }
@@ -151,12 +160,14 @@ name = "mcp-proxy"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "argparse" },
     { name = "mcp", extra = ["cli"] },
     { name = "pydantic" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "argparse", specifier = ">=1.4.0" },
     { name = "mcp", extras = ["cli"], specifier = ">=1.2.1" },
     { name = "pydantic", specifier = ">=2.10.6" },
 ]

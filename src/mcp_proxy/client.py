@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from contextlib import AsyncExitStack
 from typing import Optional
 
@@ -20,11 +21,11 @@ class McpClient:
         self.exit_stack = AsyncExitStack()
         self.session: Optional[ClientSession] = None
         self.connected = False
-        self.id = config.name
+        self.id = uuid.uuid4()
 
     async def connect(self):
-        logger.info(f"Connecting to MCP server... {self.config.command} {self.config.name}")
-        args = [self.config.name, *self.config.args]
+        logger.info(f"Connecting to MCP server... {self.config.command} {self.config.package}")
+        args = [self.config.package, *self.config.args]
         command = self.resolve_command_path(self.config.command)
         envs = mcp.client.stdio.get_default_environment()
         if self.config.env is not None:
@@ -42,7 +43,7 @@ class McpClient:
                 self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
                 await self.session.initialize()
                 self.connected = True
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(f"Connection to {self.config.name} timed out after {timeout} seconds")
             await self.exit_stack.aclose()
             raise
@@ -71,7 +72,10 @@ class McpClient:
     async def list_resources(self) -> (list[Resource], str):
         try:
             result = await self.session.list_resources()
-            return result.resources, self.id
+            resources = list(map(lambda resource: Resource(name=f"{self.id}.{resource.name}", uri=resource.uri,
+                                                           description=resource.description, mimeType=resource.mimeType,
+                                                           model_config=resource.model_config), result.resources))
+            return resources, self.id
         except Exception as e:
             logger.warning("Error listing resources, %s: %s", self.id, e)
             return [], self.id
