@@ -12,6 +12,7 @@ from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource, Prompt,
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 
 from mcp_proxy.proxy import McpProxy
@@ -68,9 +69,15 @@ def serve(config_path: str, is_sse: bool) -> None:
                     streams[0], streams[1], server.create_initialization_options()
                 )
 
+        async def handle_servers(request):
+            clients = [client for client in proxy.clients if client.connected]
+            results = list(map(lambda client: {"id": client.id}, clients))
+            return JSONResponse(results)
+
         routes = [
+            Route("/servers", endpoint=handle_servers),
             Route("/sse", endpoint=handle_sse),
-            Mount("/messages/", app=transport.handle_post_message),
+            Mount("/messages/", app=transport.handle_post_message)
         ]
 
         async def shutdown():
