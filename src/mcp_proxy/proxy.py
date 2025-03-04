@@ -71,10 +71,10 @@ class McpProxy:
             return []
         responses = await asyncio.gather(*tasks)
         all_resources = []
-        for resources, client_name in responses:
+        for resources, client_id in responses:
             all_resources.extend(resources)
             for resource in resources:
-                self.resources[resource.uri] = client_name
+                self.resources[resource.uri] = client_id
         return all_resources
 
     async def read_resource(self, uri: AnyUrl) -> ReadResourceResult:
@@ -86,8 +86,8 @@ class McpProxy:
         return await client.session.read_resource(uri)
 
     def get_client(self, name: str) -> (McpClient, str):
-        segments = name.split(".")
-        client_name = segments[0]
-        if client_name in self.routes:
-            return self.routes[client_name], segments[1]
-        raise ValueError(f"Unknown client {client_name}")
+        segments = name.split("/")
+        client_id = segments[0]
+        if client_id in self.routes:
+            return self.routes[client_id], segments[1]
+        raise ValueError(f"Unknown client {client_id}")

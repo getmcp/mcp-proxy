@@ -21,7 +21,7 @@ class McpClient:
         self.exit_stack = AsyncExitStack()
         self.session: Optional[ClientSession] = None
         self.connected = False
-        self.id = uuid.uuid4()
+        self.id = uuid.uuid4().hex
 
     async def connect(self):
         logger.info(f"Connecting to MCP server... {self.config.command} {self.config.package}")
@@ -54,14 +54,14 @@ class McpClient:
 
     async def list_tools(self) -> ListToolsResult:
         result = await self.session.list_tools()
-        tools = list(map(lambda tool: Tool(name=f"{self.id}.{tool.name}", description=tool.description,
+        tools = list(map(lambda tool: Tool(name=f"{self.id}/{tool.name}", description=tool.description,
                                            inputSchema=tool.inputSchema, model_config=tool.model_config), result.tools))
         return ListToolsResult(tools=tools)
 
     async def list_prompts(self) -> ListPromptsResult:
         try:
             result = await self.session.list_prompts()
-            prompts = list(map(lambda prompt: Prompt(name=f"{self.id}.{prompt.name}", description=prompt.description,
+            prompts = list(map(lambda prompt: Prompt(name=f"{self.id}/{prompt.name}", description=prompt.description,
                                                      arguments=prompt.arguments, model_config=prompt.model_config),
                                result.prompts))
             return ListPromptsResult(prompts=prompts)
@@ -72,7 +72,7 @@ class McpClient:
     async def list_resources(self) -> (list[Resource], str):
         try:
             result = await self.session.list_resources()
-            resources = list(map(lambda resource: Resource(name=f"{self.id}.{resource.name}", uri=resource.uri,
+            resources = list(map(lambda resource: Resource(name=f"{self.id}/{resource.name}", uri=resource.uri,
                                                            description=resource.description, mimeType=resource.mimeType,
                                                            model_config=resource.model_config), result.resources))
             return resources, self.id
