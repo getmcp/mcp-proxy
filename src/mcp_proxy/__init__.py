@@ -11,7 +11,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Create mcp servers proxy."
     )
-    parser.add_argument("-c", "--config", type=str, default="mcp-servers.json")
+    parser.add_argument("-c", "--config", type=str, default="mcp-servers.yaml")
     parser.add_argument("-t", "--type", type=str, default="stdio", choices=["stdio", "sse"])
     args = parser.parse_args()
     is_sse = args.type == "sse"

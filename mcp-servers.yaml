@@ -1,0 +1,13 @@
+servers:
+  - command: uvx
+    package: mcp-server-fetch
+    args: []
+  - command: npx
+    package: "@modelcontextprotocol/server-filesystem"
+    args:
+      - "."
+  - command: uvx
+    package: mcp-server-sqlite
+    args:
+      - "--db-path"
+      - "~/test.db"

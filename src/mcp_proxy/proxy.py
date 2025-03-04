@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 
+import yaml
 from mcp.types import Tool, Prompt, TextContent, ImageContent, EmbeddedResource, GetPromptResult, Resource, \
     ReadResourceResult
 from pydantic import AnyUrl
@@ -16,7 +17,10 @@ class McpProxy:
     def __init__(self, config_path: str):
         logger.info(f"Loading config from {config_path}")
         with open(config_path, 'r', encoding='utf-8') as stream:
-            config = json.load(stream)
+            if config_path.endswith('yaml'):
+                config = yaml.safe_load(stream)
+            else:
+                config = json.load(stream)
         server_configs = [McpServerConfig(**server) for server in config['servers']]
         self.clients = [McpClient(server_config) for server_config in server_configs]
         routes = {}
