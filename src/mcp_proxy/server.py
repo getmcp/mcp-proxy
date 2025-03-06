@@ -70,8 +70,7 @@ def serve(config_path: str, is_sse: bool) -> None:
                 )
 
         async def handle_servers(request):
-            clients = [client for client in proxy.clients if client.connected]
-            results = list(map(lambda client: {"id": client.id}, clients))
+            results = list(map(lambda client: {"id": client.id, "status": client.status}, proxy.clients))
             return JSONResponse(results)
 
         routes = [

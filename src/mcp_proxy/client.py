@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import uuid
@@ -5,8 +6,7 @@ from contextlib import AsyncExitStack
 from typing import Optional
 
 import mcp.client.stdio
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession, StdioServerParameters, stdio_client
 from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult, Resource
 
 from mcp_proxy.types import McpServerConfig
@@ -17,15 +17,29 @@ logger = logging.getLogger(__name__)
 class McpClient:
 
     def __init__(self, config: McpServerConfig):
+        self.write = None
+        self.stdio = None
         self.config = config
         self.exit_stack = AsyncExitStack()
         self.session: Optional[ClientSession] = None
         self.connected = False
         self.id = config.id or uuid.uuid4().hex
+        self.status = "created"
 
     async def connect(self):
         logger.info(f"Connecting to MCP server... {self.config.command} {self.config.package}")
-        args = [self.config.package, *self.config.args]
+        args = [self.config.package]
+        for arg in self.config.args:
+            import re
+            if re.match(r'^\{[a-zA-Z_][a-zA-Z0-9_]*\}$', arg):
+                env_var = arg[1:-1]
+                env_value = os.environ.get(env_var)
+                if env_value is not None:
+                    args.append(env_value)
+                else:
+                    args.append(arg)
+            else:
+                args.append(arg)
         command = self.resolve_command_path(self.config.command)
         envs = mcp.client.stdio.get_default_environment()
         if self.config.env is not None:
@@ -35,22 +49,24 @@ class McpClient:
             args=args,
             env=envs,
         )
-        timeout = 30
-        try:
-            import asyncio
-            async with asyncio.timeout(timeout):
-                stdio, write = await self.exit_stack.enter_async_context(stdio_client(params))
-                self.session = await self.exit_stack.enter_async_context(ClientSession(stdio, write))
-                await self.session.initialize()
-                self.connected = True
-        except TimeoutError:
-            logger.error(f"Connection to {self.config.name} timed out after {timeout} seconds")
+
+        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
+        self.stdio, self.write = stdio_transport
+        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+        task = asyncio.create_task(self.session.initialize())
+        self.status = "connecting"
+        done, pending = await asyncio.wait([task], timeout=30, return_when=asyncio.FIRST_EXCEPTION)
+        self.connected = len(done) == 1
+        if len(pending) > 0:
+            self.status = "error"
+            for t in pending:
+                t.cancel()
+            logger.error(f"Connected MCP server failed: {self.exit_stack.pop_all()}", )
+            self.stdio.close()
+            self.write.close()
             await self.exit_stack.aclose()
-            raise
-        except Exception as e:
-            logger.error(f"Failed to connect to MCP server: {str(e)}")
-            await self.exit_stack.aclose()
-            raise
+        else:
+            self.status = "connected"
 
     async def list_tools(self) -> ListToolsResult:
         result = await self.session.list_tools()

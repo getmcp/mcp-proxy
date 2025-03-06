@@ -1,7 +1,7 @@
 servers:
   - command: uvx
     package: mcp-server-fetch
-    args: []
+    args: [ ]
   - command: npx
     package: "@modelcontextprotocol/server-filesystem"
     args:
@@ -11,3 +11,8 @@ servers:
     args:
       - "--db-path"
       - "~/test.db"
+  - command: uvx
+    package: mcp-server-time
+    args:
+      - "--local-timezone"
+      - "AAsia/Shanghai"

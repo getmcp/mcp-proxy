@@ -32,9 +32,7 @@ class McpProxy:
     async def connect(self) -> None:
         tasks = []
         for client in self.clients:
-            task = asyncio.create_task(client.connect())
-            tasks.append(task)
-        await asyncio.gather(*tasks, return_exceptions=True)
+            tasks.append(asyncio.create_task(client.connect()))
 
     async def disconnect(self) -> None:
         tasks = [client.cleanup() for client in self.clients]
