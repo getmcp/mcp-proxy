@@ -27,8 +27,8 @@ class McpClient:
         self.status = "created"
 
     async def connect(self):
-        logger.info(f"Connecting to MCP server... {self.config.command} {self.config.package}")
-        args = [self.config.package]
+        logger.info(f"Connecting to MCP server... {self.config.package}: {self.config.command}")
+        args = []
         for arg in self.config.args:
             import re
             if re.match(r'^\{[a-zA-Z_][a-zA-Z0-9_]*\}$', arg):
@@ -66,7 +66,7 @@ class McpClient:
             self.write.close()
             await self.exit_stack.aclose()
         else:
-            self.status = "connected"
+            self.status = "running"
 
     async def list_tools(self) -> ListToolsResult:
         result = await self.session.list_tools()
