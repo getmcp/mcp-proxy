@@ -50,12 +50,14 @@ class McpClient:
             env=envs,
         )
 
+        timeout = os.getenv("MCP_PROXY_CONNECT_TIMEOUT", 10)
+
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
         self.stdio, self.write = stdio_transport
         self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
         task = asyncio.create_task(self.session.initialize())
         self.status = "connecting"
-        done, pending = await asyncio.wait([task], timeout=30, return_when=asyncio.FIRST_EXCEPTION)
+        done, pending = await asyncio.wait([task], timeout=timeout, return_when=asyncio.FIRST_EXCEPTION)
         self.connected = len(done) == 1
         if len(pending) > 0:
             self.status = "error"
