@@ -99,10 +99,20 @@ def serve(config_path: str, is_sse: bool) -> None:
         logger.info("Starting STDIO server")
 
         async def run():
-            await proxy.connect()
+            await proxy.wait_for_connect()
             async with mcp.server.stdio.stdio_server() as (read, write):
-                options = server.create_initialization_options()
-                await server.run(read, write, options)
+                _options = server.create_initialization_options()
+                # options = InitializationOptions(
+                #     server_name=_options.server_name,
+                #     server_version=_options.server_version,
+                #     capabilities=server.get_capabilities(
+                #         notification_options=NotificationOptions(prompts_changed=True, resources_changed=True,
+                #                                                  tools_changed=True),
+                #         experimental_capabilities={},
+                #     ),
+                #     instructions=_options.instructions,
+                # )
+                await server.run(read, write, _options)
 
         def stop(signum, frame):
             logger.info(f"Received signal {signum}, initiating shutdown")

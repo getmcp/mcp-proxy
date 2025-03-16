@@ -5,10 +5,9 @@ import logging
 import yaml
 from mcp.types import Tool, Prompt, TextContent, ImageContent, EmbeddedResource, GetPromptResult, Resource, \
     ReadResourceResult
-from pydantic import AnyUrl
-
 from mcp_proxy.client import McpClient
 from mcp_proxy.types import McpServerConfig
+from pydantic import AnyUrl
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +32,13 @@ class McpProxy:
         tasks = []
         for client in self.clients:
             tasks.append(asyncio.create_task(client.connect()))
+
+    async def wait_for_connect(self) -> None:
+        tasks = []
+        for client in self.clients:
+            tasks.append(asyncio.create_task(client.connect()))
+        async with asyncio.timeout(30):
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     async def disconnect(self) -> None:
         tasks = [client.cleanup() for client in self.clients]
