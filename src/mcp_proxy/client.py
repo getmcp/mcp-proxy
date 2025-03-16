@@ -8,7 +8,6 @@ from typing import Optional
 import mcp.client.stdio
 from mcp import ClientSession, StdioServerParameters, stdio_client
 from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult, Resource
-
 from mcp_proxy.types import McpServerConfig
 
 logger = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ class McpClient:
         self.status = "created"
 
     async def connect(self):
-        logger.info(f"Connecting to MCP server... {self.config.command}: {self.config.args[0]}")
+        logger.info(f"Connecting to MCP server... {self.config.id}: {self.config.command}")
         args = []
         for arg in self.config.args:
             import re
