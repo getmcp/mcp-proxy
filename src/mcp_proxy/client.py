@@ -27,7 +27,7 @@ class McpClient:
         self.status = "created"
 
     async def connect(self):
-        logger.info(f"Connecting to MCP server... {self.config.package}: {self.config.command}")
+        logger.info(f"Connecting to MCP server... {self.config.command}: {self.config.args[0]}")
         args = []
         for arg in self.config.args:
             import re

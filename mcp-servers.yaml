@@ -1,18 +1,22 @@
 servers:
   - command: uvx
     package: mcp-server-fetch
-    args: [ ]
+    args:
+      - "mcp-server-fetch"
   - command: npx
     package: "@modelcontextprotocol/server-filesystem"
     args:
+      - "@modelcontextprotocol/server-filesystem"
       - "."
   - command: uvx
     package: mcp-server-sqlite
     args:
+      - "mcp-server-sqlite"
       - "--db-path"
-      - "~/test.db"
+      - "/Users/aiyanbo/test.db"
   - command: uvx
     package: mcp-server-time
     args:
+      - "mcp-server-time"
       - "--local-timezone"
-      - "AAsia/Shanghai"
+      - "Asia/Shanghai"

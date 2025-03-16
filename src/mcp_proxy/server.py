@@ -9,13 +9,12 @@ from mcp.server import Server
 from mcp.server.sse import SseServerTransport
 from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource, Prompt, GetPromptResult, Resource, \
     ReadResourceResult, ReadResourceRequest, ServerResult
+from mcp_proxy.proxy import McpProxy
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
-
-from mcp_proxy.proxy import McpProxy
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +56,8 @@ def serve(config_path: str, is_sse: bool) -> None:
             )
         )
 
+    server.request_handlers[ReadResourceRequest] = read_resource
+
     if is_sse:
         logger.info("Starting SSE server")
         transport = SseServerTransport("/messages/")
@@ -88,7 +89,6 @@ def serve(config_path: str, is_sse: bool) -> None:
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
 
-        server.request_handlers[ReadResourceRequest] = read_resource
         middleware = [
             Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])
         ]

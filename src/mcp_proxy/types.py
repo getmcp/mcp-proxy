@@ -6,7 +6,6 @@ from pydantic import BaseModel
 class McpServerConfig(BaseModel):
     id: Optional[str] = None
     command: str
-    package: str
     args: list[str] = []
     env: dict[str, str] = {}
 
