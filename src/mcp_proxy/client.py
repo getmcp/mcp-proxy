@@ -8,6 +8,7 @@ from typing import Optional
 import mcp.client.stdio
 from mcp import ClientSession, StdioServerParameters, stdio_client
 from mcp.types import Tool, Prompt, ListToolsResult, ListPromptsResult, Resource
+
 from mcp_proxy.types import McpServerConfig
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,6 @@ class McpClient:
             args=args,
             env=envs,
         )
-
         timeout = os.getenv("MCP_PROXY_CONNECT_TIMEOUT", 10)
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
@@ -59,10 +59,10 @@ class McpClient:
         done, pending = await asyncio.wait([task], timeout=timeout, return_when=asyncio.FIRST_EXCEPTION)
         self.connected = len(done) == 1
         if len(pending) > 0:
+            logger.error(f"Connected MCP server failed: {self.exit_stack.pop_all()}")
             self.status = "error"
             for t in pending:
                 t.cancel()
-            logger.error(f"Connected MCP server failed: {self.exit_stack.pop_all()}", )
             self.stdio.close()
             self.write.close()
             await self.exit_stack.aclose()
