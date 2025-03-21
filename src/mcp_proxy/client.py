@@ -1,8 +1,7 @@
-import asyncio
 import logging
 import os
 import uuid
-from contextlib import AsyncExitStack
+from datetime import timedelta
 from typing import Optional
 
 import mcp.client.stdio
@@ -18,9 +17,8 @@ class McpClient:
 
     def __init__(self, config: McpServerConfig):
         self.write = None
-        self.stdio = None
+        self.read = None
         self.config = config
-        self.exit_stack = AsyncExitStack()
         self.session: Optional[ClientSession] = None
         self.connected = False
         self.id = config.id or uuid.uuid4().hex
@@ -49,31 +47,33 @@ class McpClient:
             args=args,
             env=envs,
         )
-        timeout = os.getenv("MCP_PROXY_CONNECT_TIMEOUT", 10)
-
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-        task = asyncio.create_task(self.session.initialize())
-        self.status = "connecting"
-        done, pending = await asyncio.wait([task], timeout=timeout, return_when=asyncio.FIRST_EXCEPTION)
-        self.connected = len(done) == 1
-        if len(pending) > 0:
-            logger.error(f"Connected MCP server failed: {self.exit_stack.pop_all()}")
+        timeout = timedelta(seconds=5)
+        try:
+            async with stdio_client(params) as (read, write):
+                self.read = read
+                self.write = write
+                async with ClientSession(read, write, read_timeout_seconds=timeout) as session:
+                    result = await session.initialize()
+                    print(result)
+                    self.session = session
+                    self.status = "running"
+                    self.connected = True
+        except Exception as e:
             self.status = "error"
-            for t in pending:
-                t.cancel()
-            self.stdio.close()
             self.write.close()
-            await self.exit_stack.aclose()
-        else:
-            self.status = "running"
+            self.read.close()
+            logger.exception(f"Failed to connect MCP server: {e}")
 
     async def list_tools(self) -> ListToolsResult:
-        result = await self.session.list_tools()
-        tools = list(map(lambda tool: Tool(name=f"{self.id}/{tool.name}", description=tool.description,
-                                           inputSchema=tool.inputSchema, model_config=tool.model_config), result.tools))
-        return ListToolsResult(tools=tools)
+        try:
+            result = await self.session.list_tools()
+            tools = list(map(lambda tool: Tool(name=f"{self.id}/{tool.name}", description=tool.description,
+                                               inputSchema=tool.inputSchema, model_config=tool.model_config),
+                             result.tools))
+            return ListToolsResult(tools=tools)
+        except Exception as e:
+            logger.warning("Error listing tools, %s: %s", self.id, e)
+            return ListToolsResult(tools=[])
 
     async def list_prompts(self) -> ListPromptsResult:
         try:
@@ -98,7 +98,8 @@ class McpClient:
             return [], self.id
 
     async def cleanup(self):
-        await self.exit_stack.aclose()
+        self.read.close()
+        self.write.close()
 
     @staticmethod
     def resolve_command_path(command: str) -> str:
