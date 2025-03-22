@@ -3,6 +3,7 @@ import logging
 import os
 import uuid
 from contextlib import AsyncExitStack
+from datetime import timedelta
 from typing import Optional
 
 import mcp.client.stdio
@@ -52,7 +53,8 @@ class McpClient:
 
         stdio_transport = await self.exit_stack.enter_async_context(stdio_client(params))
         self.read, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.read, self.write))
+        self.session = await self.exit_stack.enter_async_context(
+            ClientSession(self.read, self.write, read_timeout_seconds=timedelta(timeout)))
         task = asyncio.create_task(self.session.initialize())
         self.status = "connecting"
         done, pending = await asyncio.wait([task], timeout=timeout, return_when=asyncio.FIRST_EXCEPTION)
@@ -66,14 +68,19 @@ class McpClient:
             self.write.close()
             await self.exit_stack.aclose()
         else:
+            logger.info(f"Connected MCP server: {self.id}")
             self.status = "running"
 
     async def list_tools(self) -> ListToolsResult:
-        result = await self.session.list_tools()
-        tools = list(map(lambda tool: Tool(name=f"{self.id}/{tool.name}", description=tool.description,
-                                           inputSchema=tool.inputSchema, model_config=tool.model_config),
-                         result.tools))
-        return ListToolsResult(tools=tools)
+        try:
+            result = await self.session.list_tools()
+            tools = list(map(lambda tool: Tool(name=f"{self.id}/{tool.name}", description=tool.description,
+                                               inputSchema=tool.inputSchema, model_config=tool.model_config),
+                             result.tools))
+            return ListToolsResult(tools=tools)
+        except BaseException as e:
+            logger.warning("Error listing tools, %s: %s", self.id, e)
+            return ListToolsResult(tools=[])
 
     async def list_prompts(self) -> ListPromptsResult:
         try:
@@ -82,7 +89,7 @@ class McpClient:
                                                      arguments=prompt.arguments, model_config=prompt.model_config),
                                result.prompts))
             return ListPromptsResult(prompts=prompts)
-        except Exception as e:
+        except BaseException as e:
             logger.warning("Error listing prompts, %s: %s", self.id, e)
             return ListPromptsResult(prompts=[])
 

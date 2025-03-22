@@ -11,8 +11,8 @@ from mcp.types import Tool, TextContent, ImageContent, EmbeddedResource, Prompt,
     ReadResourceResult, ReadResourceRequest, ServerResult
 from mcp_proxy.proxy import McpProxy
 from starlette.applications import Starlette
-from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 
@@ -80,6 +80,10 @@ def serve(config_path: str, is_sse: bool) -> None:
             Mount("/messages/", app=transport.handle_post_message)
         ]
 
+        async def handle_http_exception(request: Request, exc: Exception):
+            logger.error(f"Error during request: {exc}")
+            return JSONResponse({"detail": exc.args}, status_code=500)
+
         async def shutdown():
             logger.info("Shutting down server...")
             try:
@@ -89,11 +93,15 @@ def serve(config_path: str, is_sse: bool) -> None:
             except Exception as e:
                 logger.error(f"Error during shutdown: {e}")
 
-        middleware = [
-            Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["POST", "GET"])
-        ]
-        starlette_app = Starlette(routes=routes, on_startup=[proxy.connect], on_shutdown=[shutdown],
-                                  middleware=middleware)
+        exception_handlers = {
+            Exception: handle_http_exception,
+            TypeError: handle_http_exception,
+            RuntimeError: handle_http_exception,
+        }
+
+        starlette_app = Starlette(debug=True, routes=routes, on_startup=[proxy.connect], on_shutdown=[shutdown],
+                                  exception_handlers=exception_handlers)
+        starlette_app = CORSMiddleware(starlette_app, allow_origins=["*"], allow_methods=["POST", "GET"])
         uvicorn.run(starlette_app, host="0.0.0.0", port=1598, log_level='info', timeout_graceful_shutdown=5)
     else:
         logger.info("Starting STDIO server")
